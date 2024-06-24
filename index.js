@@ -11,10 +11,11 @@ app.use('/',express.static(__dirname+'/public'))
 io.on('connection', (socket) => {
     console.log('a user connected',socket.id);
 
-
-
-    socket.on('From_Client',()=>{
-      console.log("Event coming from client");
+    socket.on('msg_send',(data)=>{
+      console.log(data);
+      // io.emit('msg_recieved',data);//This line is Basically emmit event to all the socket connection
+      // socket.emit('msg_recieved',data);//This line is Basically emmit event to only that socket connection
+      socket.broadcast.emit('msg_recieved',data);//This line is Basically emmit event to all the socket connection except the socket connection who is emitting the event
     })
 
    setInterval(()=>{
