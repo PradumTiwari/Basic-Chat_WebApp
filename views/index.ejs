@@ -8,7 +8,7 @@
 <body>
     <h1>Chat Box</h1>
     <h1>Chat app Using Socket</h1>
-    <button id="startchat" data-roomid="<%=roomid %>">Start</button>
+    <input id="startchat" type="hidden"  data-roomid="<%=roomid %>"></input>
     <input type="text" id="username" placeholder="username">
     <input type="text" id="newmsg" placeholder="message.....">
     <button id="btn">Send</button>
@@ -31,6 +31,11 @@ let startchat=document.getElementById('startchat');
 
 let username=document.getElementById('username');
 
+socket.emit('join_room',{
+        roomid:startchat.getAttribute('data-roomid')
+    });
+
+
 btn.addEventListener('click',()=>{
     console.log("Button Clicked");
     socket.emit('msg_send',{
@@ -41,12 +46,7 @@ btn.addEventListener('click',()=>{
    
 })
 
-startchat.addEventListener('click',()=>{
-    console.log("Start Chatting");
-    socket.emit('join_room',{
-        roomid:startchat.getAttribute('data-roomid')
-    });
-})
+
 
 socket.on('msg_recieved',(data)=>{
     let limsg=document.createElement('li');
