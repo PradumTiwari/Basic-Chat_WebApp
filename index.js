@@ -1,41 +1,52 @@
-const express=require('express');
-const http=require('http');
-const connect=require('./config/database-config')
-const socketio=require('socket.io');
-const app=express();
-const server=http.createServer(app);
-const io=socketio(server);
-//Here we have created a server using http.createServer(app) and then we have passed this server to socketio to create a socket connection.
+const express = require('express');
+const http = require('http');
+const socketio = require('socket.io');
 
-app.use('/',express.static(__dirname+'/public'))
+const connect = require('./config/database-config');
+
+const Chat = require('./models/chat');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server);
 
 io.on('connection', (socket) => {
+    socket.on('join_room', (data) => {
+        console.log("joining a room", data.roomid)
+        socket.join(data.roomid);
+    });
 
-    socket.on('join_room',(data)=>{
-      console.log("Joining a room",data.roomid);
-      socket.join(data.roomid);
+    socket.on('msg_send', async (data) => {
+        console.log(data);
+        const chat = await Chat.create({
+            roomId: data.roomid,
+            user: data.username,
+            content: data.msg
+        });
+        io.to(data.roomid).emit('msg_rcvd', data);
+    });
+
+    socket.on('typing', (data) => {
+        socket.broadcast.to(data.roomid).emit('someone_typing');
     })
+});
+app.set('view engine', 'ejs');
+app.use('/', express.static(__dirname + '/public'));
 
-      socket.on('msg_send',(data)=>{
-      console.log(data);
+app.get('/chat/:roomid', async (req, res) => {
+    const chats = await Chat.find({
+        roomId: req.params.roomid
+    }).select('content user');
+    console.log(chats);
+    res.render('index', {
+        name: 'Sanket',
+        id: req.params.roomid,
+        chats: chats
+    });
+});
 
-      // io.emit('msg_recieved',data);//This line is Basically emmit event to all the socket connection
-      // socket.emit('msg_recieved',data);//This line is Basically emmit event to only that socket connection
-      io.to(data.roomid).emit('msg_recieved',data);//This line is Basically emmit event to all the socket connection except the socket connection who is emitting the event
-    })
-
-
-
-  });
-
-app.set('view engine','ejs');
-app.get('/chat/:roomid',async (req,res)=>{
-  res.render('index',{
-    roomid:req.params.roomid
-  });
-})
-server.listen(3000,async ()=>{
-    console.log('Server is running on port 3000');
+server.listen(3000, async () => {
+    console.log('Server started');
     await connect();
-    console.log('MongoDb connected');
-})
+    console.log("mongo db connected")
+});
