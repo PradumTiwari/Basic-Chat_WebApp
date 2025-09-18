@@ -17,14 +17,22 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("user connected:", socket.id);
 
+  //Listen for username
+  socket.on("setUsername",(username)=>{
+    socket.username=username;// only this line is required to set username
+    console.log(`${username} joined with id ${socket.id}`);
+    io.emit("userJoined", `${username} has joined the chat`);
+  })
+
   // listen for a message from client
   socket.on("chatMessage", (msg) => {
     // broadcast message to everyone (including sender)
-    io.emit("chatMessage", { id: socket.id, msg, time: Date.now() });
+    io.emit("chatMessage", { id: socket.id,user:socket.username||"Anonymous", msg, time: Date.now() });
   });
 
   socket.on("disconnect", () => {
-    console.log("user disconnected:", socket.id);
+       console.log(`${socket.username || "A user"} disconnected`);
+   io.emit("userLeft", `${socket.username || "A user"} left`);
   });
 });
 
